@@ -14,18 +14,14 @@ function VerticalNavbar() {
   return (
     <div className="flex flex-col h-full w-64 bg-gray-800 text-white">
       {/* Logo Section */}
-      <div className='flex flex-row '>
-
-      
-      <div className="flex items-center justify-center h-16 w-16 ">
-        <img src="logo2.png" alt="Your Logo" className="w-full h-full object-cover" /> 
+      <div className='flex flex-row'>
+        <div className="flex items-center justify-center h-16 w-16">
+          <img src="logo2.png" alt="Your Logo" className="w-full h-full object-cover" />
+        </div>
+        <div className='mt-6'>
+          Talha Waleed
+        </div>
       </div>
-
-      <div className='mt-6'>
-        Talha Waleed 
-      </div>
-      </div>
-
 
       {/* Filter Options */}
       <div className="flex-grow mt-8">
@@ -51,20 +47,18 @@ function VerticalNavbar() {
 
       {/* Copyright Icon */}
       <div className="flex items-center justify-center h-16 bg-gray-900 space-x-3">
-        <FaCopyright className="text-xl" /> 
-        <a 
-        href="https://www.linkedin.com/in/talha-waleed-6a379b210/"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex items-center text-white"
-      >
-        <FaLinkedin className="text-xl mr-2" />
-       
-      </a>
+        <FaCopyright className="text-xl" />
+        <a
+          href="https://www.linkedin.com/in/talha-waleed-6a379b210/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center text-white"
+        >
+          <FaLinkedin className="text-xl mr-2" />
+          
+        </a>
       </div>
     </div>
-
-    
   );
 }
 
