@@ -1,67 +1,88 @@
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { addTodo, toggleTodo, removeTodo, markAllCompleted, filterTodos ,markCompleted} from './todo/ToDoSlice';
+import { addTodo, toggleTodo, removeTodo, markAllCompleted, markCompleted } from './todo/ToDoSlice';
+import { MdDeleteOutline } from "react-icons/md";
+import { IoCheckmarkDoneCircleOutline, IoToggleOutline, IoToggleSharp } from "react-icons/io5";
+import VerticalNavbar from './VerticalNavbar';
+import DatePicker from 'react-datepicker';
+import TimePicker from 'react-time-picker';
+import 'react-datepicker/dist/react-datepicker.css';
+import 'react-time-picker/dist/TimePicker.css';
 
-function FilterButtons() {
-  const dispatch = useDispatch();
-  const filter = useSelector((state) => state.todos.filter);
+// TodoItem Component
+function getRemainingTime(dueDate, dueTime) {
+  if (!dueDate || !dueTime) return '';
 
-  const handleFilterChange = (newFilter) => {
-    dispatch(filterTodos(newFilter));
-  };
+  const [hours, minutes, period] = dueTime.split(/[: ]/);
+  const dueHour = period === 'PM' && hours !== '12' ? parseInt(hours, 10) + 12 : period === 'AM' && hours === '12' ? 0 : parseInt(hours, 10);
+  const dueDateTime = new Date(dueDate);
+  dueDateTime.setHours(dueHour);
+  dueDateTime.setMinutes(parseInt(minutes, 10));
+  dueDateTime.setSeconds(0);
 
-  return (
-    <div className="flex justify-between mb-4">
-      <button
-        className={`px-4 py-2 rounded ${filter === 'ALL' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'}`}
-        onClick={() => handleFilterChange('ALL')}
-      >
-        All
-      </button>
-      <button
-        className={`px-4 py-2 rounded ${filter === 'COMPLETED' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'}`}
-        onClick={() => handleFilterChange('COMPLETED')}
-      >
-        Completed
-      </button>
-      <button
-        className={`px-4 py-2 rounded ${filter === 'INCOMPLETE' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'}`}
-        onClick={() => handleFilterChange('INCOMPLETE')}
-      >
-        Incomplete
-      </button>
-    </div>
-  );
+  const now = new Date();
+  const timeDiff = dueDateTime - now;
+
+  if (timeDiff <= 0) return 'Overdue';
+
+  const hoursLeft = Math.floor(timeDiff / (1000 * 60 * 60));
+  const minutesLeft = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+
+  return `${hoursLeft}h ${minutesLeft}m remaining`;
 }
 
 function TodoItem({ todo, index }) {
   const dispatch = useDispatch();
 
   return (
-    <li className="flex items-center justify-between p-2 bg-gray-100 rounded-lg mb-2">
-      <span
-        className={`flex-1 cursor-pointer ${todo.completed ? 'line-through text-gray-500' : ''}`}
-        onClick={() => dispatch(toggleTodo({ id: index }))}
-      >
+    <li className="flex items-center justify-between p-2 bg-gray-100 rounded-lg mb-2 h-10">
+      <label className="inline-flex items-center cursor-pointer size={24}">
+        <input type="checkbox" checked={todo.completed} readOnly className="w-4 h-4" />
+        <span className="ml-2"></span>
+      </label>
+      <span className={`flex-1 cursor-pointer ${todo.completed ? 'line-through text-gray-500' : ''}`}>
         {todo.text}
+        {todo.dueDate && (
+          <span className="text-sm text-gray-400 ml-2">Due: {todo.dueDate} {todo.dueTime}</span>
+        )}
+        {todo.dueDate && todo.dueTime && (
+          <span className="text-sm text-gray-400 ml-2">{getRemainingTime(todo.dueDate, todo.dueTime)}</span>
+        )}
       </span>
-      <button
-        onClick={() => dispatch(removeTodo({ id: index }))}
-        className="ml-4 text-red-500 hover:text-red-600 focus:outline-none"
-      >
-        Remove
-      </button>
-      <button
-        onClick={() => dispatch(markCompleted({ id: index }))}
-        className="ml-4 text-red-500 hover:text-red-600 focus:outline-none"
-      >
-        complete
-      </button>
 
+      <div className="flex items-center space-x-4">
+        <button
+          onClick={() => dispatch(toggleTodo({ id: index }))}
+          className="text-blue-400 hover:text-green-600 focus:outline-none"
+        >
+          {todo.completed ? (
+            <IoToggleSharp size={24} />
+          ) : (
+            <IoToggleOutline size={24} />
+          )}
+        </button>
+
+        <button
+          onClick={() => dispatch(markCompleted({ id: index }))}
+          className="text-green-400 hover:text-green-600 focus:outline-none"
+        >
+          <IoCheckmarkDoneCircleOutline size={24} />
+        </button>
+
+        <button
+          onClick={() => dispatch(removeTodo({ id: index }))}
+          className="text-red-400 hover:text-red-600 focus:outline-none"
+        >
+          <MdDeleteOutline size={24} />
+        </button>
+      </div>
     </li>
   );
 }
 
+
+
+// TodoList Component
 function TodoList() {
   const todos = useSelector((state) => {
     const todos = state.todos.todos;
@@ -86,53 +107,137 @@ function TodoList() {
   );
 }
 
+// App Component
 function App() {
   const dispatch = useDispatch();
   const [newTodo, setNewTodo] = useState('');
+  const [dueDate, setDueDate] = useState(null); // State for due date
+  const [dueTime, setDueTime] = useState('');
 
   const handleAddTodo = () => {
-    if (newTodo.trim() !== '') {
-      dispatch(addTodo({ text: newTodo }));
-      setNewTodo('');
+    if (newTodo.trim() === '') {
+      alert('Please enter a todo item.');
+      return;
     }
+  
+    if (!dueDate && !dueTime) {
+      alert('Please enter a due date and/or time.');
+      return;
+    }
+  
+    dispatch(addTodo({
+      text: newTodo,
+      dueDate: dueDate ? dueDate.toLocaleDateString() : null,
+      dueTime
+    }));
+    setNewTodo('');
+    setDueDate(null);
+    setDueTime('');
   };
+  
+  
 
   const handleMarkAllCompleted = () => {
     dispatch(markAllCompleted());
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center py-10">
-      <div className="bg-white shadow-lg rounded-lg p-6 max-w-md w-full">
-        <h1 className="text-2xl font-bold text-gray-800 mb-4">Todo List</h1>
-
-        <div className="flex mb-4">
-          <input
-            type="text"
-            value={newTodo}
-            onChange={(e) => setNewTodo(e.target.value)}
-            placeholder="Add a new todo"
-            className="w-full p-2 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <button
-            onClick={handleAddTodo}
-            className="bg-blue-500 text-white px-4 py-2 rounded-r-lg hover:bg-blue-600 focus:outline-none"
-          >
-            Add
-          </button>
+    <>  
+      <div className='flex flex-row'>
+        <div>
+          <VerticalNavbar/>
         </div>
 
-        <FilterButtons />
-        <TodoList />
+        <div className="w-full bg-gray-100 flex items-center justify-center py-10">
+          <div className="bg-white shadow-lg rounded-lg p-6 max-w-md w-full">
+            <h1 className="text-2xl font-bold text-gray-800 mb-4">Todo List</h1>
+{/* 
+            <div className="mb-4">
+              <input
+                type="text"
+                value={newTodo}
+                onChange={(e) => setNewTodo(e.target.value)}
+                placeholder="Add a new todo"
+                className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
+              />
 
-        <button
-          onClick={handleMarkAllCompleted}
-          className="w-full mt-6 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 focus:outline-none"
-        >
-          Mark All Completed
-        </button>
+              <div className="flex mb-2">
+                <DatePicker
+                  selected={dueDate}
+                  onChange={(date) => setDueDate(date)}
+                  placeholderText="Select due date"
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="flex mb-4">
+                <TimePicker
+                  value={dueTime}
+                  onChange={setDueTime}
+                  disableClock={true}
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <button
+                onClick={handleAddTodo}
+                className="bg-blue-500 text-white w-full px-4 py-2 rounded-lg hover:bg-blue-600 focus:outline-none"
+              >
+                Add
+              </button>
+            </div> */}
+            <div className="mb-4">
+  <input
+    type="text"
+    value={newTodo}
+    onChange={(e) => setNewTodo(e.target.value)}
+    placeholder="Add a new todo"
+    className={`w-full p-2 border ${newTodo.trim() === '' ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2`}
+  />
+
+  <div className="flex mb-2">
+    <DatePicker
+      selected={dueDate}
+      onChange={(date) => setDueDate(date)}
+      placeholderText="Select due date"
+      className={`w-full p-2 border ${!dueDate && dueTime ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500`}
+    />
+  </div>
+
+  <div className="flex mb-4">
+  <TimePicker
+  value={dueTime}
+  onChange={setDueTime}
+  clockType="12-hour"
+  format="hh:mm a"
+  disableClock={true}
+  className={`w-full p-2 border ${dueDate && !dueTime ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500`}
+/>
+
+  </div>
+
+  <button
+    onClick={handleAddTodo}
+    className="bg-blue-500 text-white w-full px-4 py-2 rounded-lg hover:bg-blue-600 focus:outline-none"
+  >
+    Add
+  </button>
+</div>
+
+
+            {/* <FilterButtons /> */}
+            <TodoList />
+
+            <button
+              onClick={handleMarkAllCompleted}
+              className="w-full mt-6 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 focus:outline-none"
+            >
+              Mark All Completed
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 

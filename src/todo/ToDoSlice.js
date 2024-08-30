@@ -7,7 +7,12 @@ const todoSlice = createSlice({
   initialState,
   reducers: {
     addTodo: (state, action) => {
-      state.todos.push({ text: action.payload.text, completed: false });
+      state.todos.push({
+        text: action.payload.text,
+        completed: false,
+        dueDate: action.payload.dueDate || null, // Include dueDate
+        dueTime: action.payload.dueTime || '',
+      });
     },
     toggleTodo: (state, action) => {
       const todo = state.todos[action.payload.id];
@@ -30,11 +35,9 @@ const todoSlice = createSlice({
         todo.completed = false;
       }
     },
-    
     filterTodos: (state, action) => {
       state.filter = action.payload;
     },
-
     markAllCompleted: (state) => {
       state.todos.forEach(todo => todo.completed = true);
     },
