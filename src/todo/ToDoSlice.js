@@ -30,9 +30,11 @@ const todoSlice = createSlice({
         todo.completed = false;
       }
     },
+    
     filterTodos: (state, action) => {
       state.filter = action.payload;
     },
+
     markAllCompleted: (state) => {
       state.todos.forEach(todo => todo.completed = true);
     },
